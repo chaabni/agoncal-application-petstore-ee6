@@ -1,15 +1,15 @@
 package org.agoncal.application.petstore.service;
 
-import org.agoncal.application.petstore.domain.Customer;
-import org.agoncal.application.petstore.exception.ValidationException;
-import org.agoncal.application.petstore.util.Loggable;
-
+import java.io.Serializable;
+import java.util.List;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
-import java.io.Serializable;
+import org.agoncal.application.petstore.domain.Customer;
+import org.agoncal.application.petstore.exception.ValidationException;
+import org.agoncal.application.petstore.util.Loggable;
 
 /**
  * @author Antonio Goncalves
@@ -81,6 +81,11 @@ public class CustomerService implements Serializable {
         typedQuery.setParameter("password", password);
 
         return typedQuery.getSingleResult();
+    }
+    
+    public List<Customer> findAll() {
+        TypedQuery<Customer> q = em.createQuery("Select c from Customer c", Customer.class);
+        return q.getResultList();
     }
 
     public Customer updateCustomer(final Customer customer) {

@@ -1,15 +1,14 @@
 package org.agoncal.application.petstore.web;
 
-import org.agoncal.application.petstore.util.Loggable;
-
+import com.vaadin.ui.Notification;
+import java.util.Map;
+import java.util.logging.Logger;
 import javax.faces.application.FacesMessage;
 import javax.faces.context.FacesContext;
 import javax.inject.Inject;
-import java.util.Map;
-import java.util.logging.Logger;
-
 import static org.agoncal.application.petstore.util.ExceptionUtils.getRootCause;
 import static org.agoncal.application.petstore.util.ExceptionUtils.isApplicationException;
+import org.agoncal.application.petstore.util.Loggable;
 
 /**
  * @author Antonio Goncalves
@@ -52,8 +51,10 @@ public abstract class Controller {
     }
 
     protected void addErrorMessage(String message) {
-        FacesContext context = FacesContext.getCurrentInstance();
-        context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, message, null));
+        Notification.show(message);
+        System.err.println(message);
+//        FacesContext context = FacesContext.getCurrentInstance();
+//        context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, message, null));
     }
 
     protected String getParam(String param) {

@@ -1,22 +1,20 @@
 package org.agoncal.application.petstore.web;
 
-import org.agoncal.application.petstore.domain.Customer;
-import org.agoncal.application.petstore.service.CustomerService;
-
+import java.io.Serializable;
 import javax.enterprise.context.Conversation;
 import javax.enterprise.context.SessionScoped;
+import javax.enterprise.event.Event;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.security.auth.login.LoginContext;
-import java.io.Serializable;
+import org.agoncal.application.petstore.domain.Customer;
+import org.agoncal.application.petstore.service.CustomerService;
+import org.agoncal.application.petstore.ui.CustomerDetailsChanged;
 
 /**
- * @author Antonio Goncalves
- *         http://www.antoniogoncalves.org
- *         --
+ * @author Antonio Goncalves http://www.antoniogoncalves.org --
  */
-
 @Named
 @SessionScoped
 public class AccountController extends Controller implements Serializable {
@@ -24,7 +22,6 @@ public class AccountController extends Controller implements Serializable {
     // ======================================
     // =             Attributes             =
     // ======================================
-
     @Inject
     private CustomerService customerService;
 
@@ -42,20 +39,31 @@ public class AccountController extends Controller implements Serializable {
     @SessionScoped
     private transient LoginContext loginContext;
 
+    @Inject
+    private Event<CustomerDetailsChanged> customerDetailsChangedEvent;
+
     // ======================================
     // =              Public Methods        =
     // ======================================
+    public void doLogin(String user, String pw) {
+        credentials.setLogin(user);
+        credentials.setPassword(pw);
+        doLogin();
+    }
 
     public String doLogin() {
 
         String navigateTo = null;
         try {
             loginContext.login();
-            loggedinCustomer = customerService.findCustomer(credentials.getLogin());
+            loggedinCustomer = customerService.findCustomer(credentials.
+                    getLogin());
+
             navigateTo = "main.faces";
         } catch (Exception e) {
             addMessage(this.getClass().getName(), "doLogin", e);
         }
+        customerDetailsChangedEvent.fire(new CustomerDetailsChanged());
         return navigateTo;
     }
 
@@ -68,7 +76,8 @@ public class AccountController extends Controller implements Serializable {
         }
 
         // Id and password must be filled
-        if ("".equals(credentials.getLogin()) || "".equals(credentials.getPassword()) || "".equals(credentials.getPassword2())) {
+        if ("".equals(credentials.getLogin()) || "".equals(credentials.
+                getPassword()) || "".equals(credentials.getPassword2())) {
             addWarningMessage("Id and passwords have to be filled");
             return null;
         } else if (!credentials.getPassword().equals(credentials.getPassword2())) {
@@ -98,7 +107,6 @@ public class AccountController extends Controller implements Serializable {
         return navigateTo;
     }
 
-
     public void doLogout() {
         loggedinCustomer = null;
         // Stop conversation
@@ -107,25 +115,13 @@ public class AccountController extends Controller implements Serializable {
         }
     }
 
-    public String doUpdateAccount() {
-
-        String navigateTo = null;
-
-        try {
-            // Updates the customer
-            loggedinCustomer = customerService.updateCustomer(loggedinCustomer);
-            addInformationMessage("Your account has been updated");
-            navigateTo = "account.updated";
-        } catch (Exception e) {
-            addMessage(this.getClass().getName(), "doUpdateAccount", e);
-        }
-        return navigateTo;
+    public void doUpdateAccount() {
+        loggedinCustomer = customerService.updateCustomer(loggedinCustomer);
     }
 
     public boolean isLoggedIn() {
         return loggedinCustomer != null;
     }
-
 
     public Customer getLoggedinCustomer() {
         return loggedinCustomer;
@@ -134,4 +130,9 @@ public class AccountController extends Controller implements Serializable {
     public void setLoggedinCustomer(Customer loggedinCustomer) {
         this.loggedinCustomer = loggedinCustomer;
     }
+
+    public void persistAndLogin(Customer newCustomer) {
+        setLoggedinCustomer(customerService.createCustomer(newCustomer));
+    }
+
 }

@@ -1,11 +1,8 @@
 package org.agoncal.application.petstore.rest;
 
-import org.agoncal.application.petstore.domain.Category;
-import org.agoncal.application.petstore.domain.Item;
-import org.agoncal.application.petstore.domain.Product;
-import org.agoncal.application.petstore.service.CatalogService;
-import org.agoncal.application.petstore.util.Loggable;
-
+import java.io.Serializable;
+import java.net.URI;
+import java.util.List;
 import javax.annotation.ManagedBean;
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -14,9 +11,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBElement;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.List;
+import org.agoncal.application.petstore.domain.Category;
+import org.agoncal.application.petstore.domain.Customer;
+import org.agoncal.application.petstore.domain.Item;
+import org.agoncal.application.petstore.domain.Product;
+import org.agoncal.application.petstore.service.CatalogService;
+import org.agoncal.application.petstore.service.CustomerService;
+import org.agoncal.application.petstore.util.Loggable;
 
 /**
  * @author Antonio Goncalves
@@ -35,6 +36,8 @@ public class CatalogRestService implements Serializable {
 
     @Inject
     private CatalogService catalogService;
+    
+    @Inject CustomerService customerService;
 
     @Context
     private UriInfo uriInfo;
@@ -48,6 +51,13 @@ public class CatalogRestService implements Serializable {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public List<Category> findAllCategories() {
         return catalogService.findAllCategories();
+    }
+    
+    @GET
+    @Path("/customers")
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    public List<Customer> findCustomers() {
+        return customerService.findAll();
     }
 
     @GET

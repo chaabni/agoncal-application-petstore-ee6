@@ -4,39 +4,30 @@ import org.agoncal.application.petstore.domain.*;
 import org.agoncal.application.petstore.service.CatalogService;
 import org.agoncal.application.petstore.service.OrderService;
 
-import javax.enterprise.context.Conversation;
-import javax.enterprise.context.ConversationScoped;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import javax.enterprise.context.SessionScoped;
 import org.agoncal.application.petstore.tomee.OrderMBean;
+import org.agoncal.application.petstore.ui.CartUpdated;
 
 /**
- * @author Antonio Goncalves
- *         http://www.antoniogoncalves.org
- *         --
+ * @author Antonio Goncalves http://www.antoniogoncalves.org --
  */
-
-@Named
-@ConversationScoped
+@SessionScoped
 public class ShoppingCartController extends Controller implements Serializable {
 
     // ======================================
     // =             Attributes             =
     // ======================================
-
     @Inject
     private CatalogService catalogBean;
     @Inject
     private OrderService orderBean;
 
-    @Inject
-    private Conversation conversation;
-
-    private List<CartItem> cartItems;
+    private List<CartItem> cartItems = new ArrayList<>();
 
     private CreditCard creditCard = new CreditCard();
 
@@ -49,86 +40,48 @@ public class ShoppingCartController extends Controller implements Serializable {
 
     private Order order;
 
+    @Inject
+    javax.enterprise.event.Event<CartUpdated> cartUpdatedEvent;
+
     // ======================================
     // =              Public Methods        =
     // ======================================
-
-    public String addItemToCart() {
-        String navigateTo = null;
-        try {
-            Item item = catalogBean.findItem(getParamId("itemId"));
-
-            // Start conversation
-            if (conversation.isTransient()) {
-                cartItems = new ArrayList<CartItem>();
-                conversation.begin();
+    public void addItem(Item item) {
+        for (CartItem cartItem : cartItems) {
+            // If item already exists in the shopping cart we just change the quantity
+            if (cartItem.getItem().getId().equals(item.getId())) {
+                cartItem.setQuantity(cartItem.getQuantity() + 1);
+                cartUpdatedEvent.fire(new CartUpdated());
+                return;
             }
-
-            boolean itemFound = false;
-            for (CartItem cartItem : cartItems) {
-                // If item already exists in the shopping cart we just change the quantity
-                if (cartItem.getItem().equals(item)) {
-                    cartItem.setQuantity(cartItem.getQuantity() + 1);
-                    itemFound = true;
-                }
-            }
-            if (!itemFound)
-                // Otherwise it's added to the shopping cart
-                cartItems.add(new CartItem(item, 1));
-
-            navigateTo = "showcart.faces";
-        } catch (Exception e) {
-            addMessage(this.getClass().getName(), "addItemToCart", e);
         }
-        return navigateTo;
+        // Otherwise it's added to the shopping cart
+        cartItems.add(new CartItem(item, 1));
+        cartUpdatedEvent.fire(new CartUpdated());
+
     }
 
-    public String removeItemFromCart() {
-        String navigateTo = null;
-
-        try {
-            Item item = catalogBean.findItem(getParamId("itemId"));
-
-            for (CartItem cartItem : cartItems) {
-                if (cartItem.getItem().equals(item)) {
-                    cartItems.remove(cartItem);
-                    return null;
-                }
+    public void removeItemFromCart(Item item) {
+        for (CartItem cartItem : cartItems) {
+            if (cartItem.getItem().equals(item)) {
+                cartItems.remove(cartItem);
+                cartUpdatedEvent.fire(new CartUpdated());
+                return;
             }
-
-        } catch (Exception e) {
-            addMessage(this.getClass().getName(), "removeItemFromCart", e);
         }
-        return navigateTo;
     }
 
     public String updateQuantity() {
         return null;
     }
 
-    public String checkout() {
-        return "confirmorder.faces";
-    }
+    public void confirmOrder() {
+        order = orderBean.createOrder(getCustomer(), creditCard, getCartItems());
+        cartItems.clear();
 
-    public String confirmOrder() {
-        String navigateTo = null;
+        mbean.incr(order.getCustomer().getFullname());
 
-        try {
-            order = orderBean.createOrder(getCustomer(), creditCard, getCartItems());
-            cartItems.clear();
-
-            // Stop conversation
-            if (!conversation.isTransient()) {
-                conversation.end();
-            }
-
-            mbean.incr(order.getCustomer().getFullname());
-
-            navigateTo = "orderconfirmed.faces";
-        } catch (Exception e) {
-            addMessage(this.getClass().getName(), "confirmOrder", e);
-        }
-        return navigateTo;
+        cartUpdatedEvent.fire(new CartUpdated());
     }
 
     public List<CartItem> getCartItems() {
@@ -139,11 +92,11 @@ public class ShoppingCartController extends Controller implements Serializable {
         return getCartItems() == null || getCartItems().size() == 0;
     }
 
-
     public Float getTotal() {
 
-        if (cartItems == null || cartItems.isEmpty())
+        if (cartItems == null || cartItems.isEmpty()) {
             return 0f;
+        }
 
         Float total = 0f;
 
@@ -157,11 +110,9 @@ public class ShoppingCartController extends Controller implements Serializable {
     // ======================================
     // =         Getters & setters          =
     // ======================================
-
     public Customer getCustomer() {
         return customerInstances.get();
     }
-
 
     public CreditCard getCreditCard() {
         return creditCard;
@@ -179,11 +130,18 @@ public class ShoppingCartController extends Controller implements Serializable {
         this.order = order;
     }
 
-    public Conversation getConversation() {
-        return conversation;
-    }
-
     public CreditCardType[] getCreditCardTypes() {
         return CreditCardType.values();
     }
+
+    public void updateQuantity(Item item, int quantity) {
+        for (CartItem cartItem : cartItems) {
+            if (cartItem.getItem().getId().equals(item.getId())) {
+                cartItem.setQuantity(quantity);
+                return;
+            }
+        }
+
+    }
+
 }
