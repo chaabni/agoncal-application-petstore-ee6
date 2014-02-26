@@ -1,10 +1,7 @@
 package org.agoncal.application.petstore.web;
 
 import com.vaadin.ui.Notification;
-import java.util.Map;
 import java.util.logging.Logger;
-import javax.faces.application.FacesMessage;
-import javax.faces.context.FacesContext;
 import javax.inject.Inject;
 import static org.agoncal.application.petstore.util.ExceptionUtils.getRootCause;
 import static org.agoncal.application.petstore.util.ExceptionUtils.isApplicationException;
@@ -41,29 +38,18 @@ public abstract class Controller {
     }
 
     protected void addInformationMessage(String message) {
-        FacesContext context = FacesContext.getCurrentInstance();
-        context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+        Notification.show(message);
     }
 
     protected void addWarningMessage(String message) {
-        FacesContext context = FacesContext.getCurrentInstance();
-        context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, message, null));
+        Notification.show(message, Notification.Type.WARNING_MESSAGE);
     }
 
     protected void addErrorMessage(String message) {
-        Notification.show(message);
+        Notification.show(message, Notification.Type.ERROR_MESSAGE);
         System.err.println(message);
 //        FacesContext context = FacesContext.getCurrentInstance();
 //        context.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, message, null));
     }
 
-    protected String getParam(String param) {
-        FacesContext context = FacesContext.getCurrentInstance();
-        Map<String, String> map = context.getExternalContext().getRequestParameterMap();
-        return map.get(param);
-    }
-
-    protected Long getParamId(String param) {
-        return Long.valueOf(getParam(param));
-    }
 }

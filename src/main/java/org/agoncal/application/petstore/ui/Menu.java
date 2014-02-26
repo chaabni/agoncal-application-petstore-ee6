@@ -11,7 +11,6 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.themes.Reindeer;
 import java.util.List;
 import javax.annotation.PostConstruct;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import org.agoncal.application.petstore.domain.Category;
 import org.agoncal.application.petstore.service.CatalogService;

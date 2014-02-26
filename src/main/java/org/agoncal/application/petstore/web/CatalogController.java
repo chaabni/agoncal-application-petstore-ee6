@@ -72,18 +72,6 @@ public class CatalogController extends Controller implements Serializable {
         return navigateTo;
     }
 
-    public String doFindItem() {
-        String navigateTo = null;
-
-        try {
-            item = catalogService.findItem(getParamId("itemId"));
-            navigateTo = "showitem.faces";
-        } catch (Exception e) {
-            addMessage(this.getClass().getName(), "doFindItem", e);
-        }
-        return navigateTo;
-    }
-
     public String doSearch() {
         String navigateTo = null;
 
